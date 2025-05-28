@@ -1,6 +1,6 @@
-# Kubernetes Workshop for Bioinformaticians
+# Kubernetes for Computational Biology
 
-Welcome to this hands-on Kubernetes workshop designed specifically for bioinformatics workflows. This workshop will guide you through the fundamentals of Kubernetes and provide practical templates for common bioinformatics use cases.
+Welcome to this hands-on Kubernetes workshop designed specifically for computational biomedical workflows. This workshop will guide you through the fundamentals of Kubernetes and provide practical templates for common bioinformatics use cases.
 
 ## Structure
 
