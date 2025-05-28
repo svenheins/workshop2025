@@ -1,0 +1,20 @@
+I want to create a Kubernetes introductory workshop for bioinformaticians. We have a Kubernetes cluster and have CPU and GPU tasks. There will be most likely three use cases:
+
+1) CPU based datascience notebook (jupyter notebbok web based access)
+2) CPU based classical analysis pipeline using nextflow
+3) GPU based deep learning approaches to train some transformer architecture on spatial omics dataset
+
+For all three cases I want to have a template, that allows users to easily deploy a statefulset (1) and 3)) or deployment (2)), which allows the user to directly get started with their project.
+
+Before I go into those usecases, I also need some introduction to the following concept:
+
+Kubernetes in general (overview how it works)
+our concrete Kubernetes cluster (I will provide and overview about the resources / nodes)
+namespaces (isolating environments vs sharing)
+pod, deployment, statefulset, ingress (differences, when to use what)
+data access (mounting data vs internal data for a pod) and persistence
+Create some markdown sections for all of the introduction pieces. Each section should also have a suitable small example script for a user who doesn't have the admin role for the cluster, so just show the pods for example or investigate a deployment and create a template from that.
+
+Then go into the three usecase with a small motivation and the final commands / yaml templates.
+
+This will all go into a github repository, so take into account that there is a .env and .env.example (is the template for the .env file) which I use in order to fill in the sensitive information. Make use of environment variables in that regard, for example for IP-adresses, user and namespace names.
