@@ -31,18 +31,7 @@ Kubernetes (K8s) is a container orchestration platform that automates the deploy
 
 ### Core Architecture
 
-```
-┌─────────────────┐    ┌──────────────────────────────────┐
-│   Master Node   │    │           Worker Nodes           │
-│                 │    │                                  │
-│  • API Server   │◄──►│  ┌─────────┐  ┌─────────────────┐│
-│  • etcd         │    │  │  Pod A  │  │      Pod B      ││
-│  • Scheduler    │    │  │ ┌─────┐ │  │ ┌─────┐ ┌─────┐ ││
-│  • Controller   │    │  │ │App1 │ │  │ │App2 │ │App3 │ ││
-│    Manager      │    │  │ └─────┘ │  │ └─────┘ └─────┘ ││
-└─────────────────┘    │  └─────────┘  └─────────────────┘│
-                       └──────────────────────────────────┘
-```
+![Kubernetes Cluster Architecture](./images/kubernetes-cluster-architecture.svg)
 
 ### Key Benefits for Bioinformatics
 
