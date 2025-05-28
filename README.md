@@ -2,7 +2,13 @@
 
 Welcome to this hands-on Kubernetes workshop designed specifically for bioinformatics workflows. This workshop will guide you through the fundamentals of Kubernetes and provide practical templates for common bioinformatics use cases.
 
-## Prerequisites
+## Structure
+
+1. Introduction to Kubernetes: 15 minutes presentation about the core principles of Kubernetes and our concrete cluster
+2. Demonstration: 15 minutes of demonstration how to work with Kubernetes (only requirement: working kubectl + config) - showcase the 3 usecases - in a nutshell - what to expect from those examples
+3. Practical Session: 30 minutes of reproducing 1 blueprint for each participant
+
+## Prerequisites for the practical session
 
 - Basic command line knowledge
 - Docker concepts (containers, images)
