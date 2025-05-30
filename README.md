@@ -1,3 +1,5 @@
+![Kubernetes for Computational Biology](./images/Kubernetes_workshop_2025.png)
+
 # Kubernetes for Computational Biology
 
 Welcome to this hands-on Kubernetes workshop designed specifically for computational biomedical workflows. This workshop will guide you through the fundamentals of Kubernetes and provide practical templates for common bioinformatics use cases.

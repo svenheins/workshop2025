@@ -1,0 +1,33 @@
+Description: 
+This hands-on workshop is designed for bioinformaticians, computational biologists, 
+and biomedical researchers who want to use Kubernetes for scalable scientific computing. 
+Whether you're running CPU-intensive genomics pipelines, 
+interactive data analysis notebooks, or GPU-accelerated machine learning models, 
+this workshop will teach you how to deploy and manage your computational workloads 
+on our Kubernetes cluster. 
+
+We'll cover both theoretical concepts and practical implementation, with ready-to-use templates 
+for common use cases. Participants should have basic command-line experience 
+and familiarity with containerization concepts (Docker).
+
+Topics:
+
+- Kubernetes fundamentals and architecture for scientific computing (~15 minutes)
+- Live demo of common use cases (~15 minutes)
+- Practical session (~30 minutes)
+  - Deploying interactive Jupyter notebooks
+  - Running scalable bioinformatics pipelines using Nextflow on Kubernetes
+  - GPU-based deep learning workflows in VSCode
+
+Prerequisites:
+
+Basic command-line/terminal experience
+Familiarity with Docker containers (preferred but not required)
+Basic knowledge about at least one of the tools: Jupyter notebooks, VSCode or Nextflow
+
+What you'll take away:
+
+Production-ready Kubernetes templates for your research
+Practical skills to deploy and manage computational workloads
+Understanding of cloud-native approaches to bioinformatics
+Troubleshooting skills for common Kubernetes issues
