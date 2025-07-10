@@ -22,9 +22,40 @@ spec:
       labels:
         app: workshop2025-gpu
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: gpu_memory
+                operator: In
+                values:
+                - "16"
+            weight: 100
+          - preference:
+              matchExpressions:
+              - key: gpu_memory
+                operator: In
+                values:
+                - "48"
+            weight: 75
+          - preference:
+              matchExpressions:
+              - key: gpu_memory
+                operator: In
+                values:
+                - "40"
+            weight: 50
+          - preference:
+              matchExpressions:
+              - key: gpu_memory
+                operator: In
+                values:
+                - "80"
+            weight: 25
       containers:
       
-      # should start jupyter 
+      # uncomment the following lines to run a command in the container (keep it alive if there is no default command)
       #- command:
       #  - sleep
       #  - infinity

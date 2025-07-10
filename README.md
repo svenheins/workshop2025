@@ -39,10 +39,6 @@ Kubernetes (K8s) is a container orchestration platform that automates the deploy
 - **Provides** networking and storage abstractions
 - **Handles** rolling updates and rollbacks
 
-### Core Architecture
-
-![Kubernetes Cluster Architecture](./images/kubernetes-cluster-architecture.svg)
-
 ### Key Benefits for Bioinformatics
 
 - **Resource Efficiency**: Share compute resources across multiple analyses
@@ -50,6 +46,12 @@ Kubernetes (K8s) is a container orchestration platform that automates the deploy
 - **Reproducibility**: Consistent environments across development and production
 - **Isolation**: Separate different projects and users
 - **GPU Management**: Efficient allocation of expensive GPU resources
+
+### Core Architecture
+
+![Kubernetes Cluster Architecture](./images/kubernetes-cluster-architecture.svg)
+
+## 2. Our Kubernetes Cluster
 
 ### Basic kubectl Commands
 
@@ -60,57 +62,14 @@ kubectl cluster-info
 # View nodes in the cluster
 kubectl get nodes
 
-# Check your current context and namespace
-kubectl config current-context
-kubectl config view --minify --output 'jsonpath={..namespace}'
+# View top processes in each node
+kubectl top nodes
+
+# List all pods (add -n <namespace> to see resources from a different namespace)
+kubectl get pods
 ```
 
 **Exercise**: Run the above commands to familiarize yourself with the cluster.
-
----
-
-## 2. Our Kubernetes Cluster
-
-### Cluster Overview
-
-Our bioinformatics cluster is configured with the following specifications:
-
-```bash
-# Get detailed node information
-kubectl get nodes -o wide
-
-# Check node resources and allocations
-kubectl describe nodes
-
-# View available resources
-kubectl top nodes
-```
-
-### Node Types
-
-**CPU Nodes**:
-
-- High-memory nodes optimized for memory-intensive bioinformatics applications
-- Suitable for genome assembly, large-scale sequence alignment
-- Node selector: `node-type=cpu-optimized`
-
-**GPU Nodes**:
-
-- NVIDIA GPUs for deep learning and GPU-accelerated bioinformatics tools
-- Limited number - use efficiently!
-- Node selector: `node-type=gpu-enabled`
-
-### Storage Classes
-
-```bash
-# View available storage classes
-kubectl get storageclass
-
-# Check persistent volumes
-kubectl get pv
-```
-
-**Exercise**: Explore the cluster resources and identify which nodes are available for your workloads.
 
 ---
 
@@ -136,32 +95,6 @@ kubectl get all -n ${NAMESPACE}
 
 # Set default namespace for your session
 kubectl config set-context --current --namespace=${NAMESPACE}
-```
-
-### Working with Namespaces
-
-```yaml
-# namespace-template.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${NAMESPACE}
-  labels:
-    project: ${PROJECT_NAME}
-    user: ${USERNAME}
----
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: ${NAMESPACE}-quota
-  namespace: ${NAMESPACE}
-spec:
-  hard:
-    requests.cpu: "20"
-    requests.memory: 100Gi
-    limits.cpu: "40"
-    limits.memory: 200Gi
-    persistentvolumeclaims: "10"
 ```
 
 **Exercise**:
@@ -219,31 +152,6 @@ spec:
           cpu: "1"
 ```
 
-### Deployments: Managing Pod Replicas
-
-**Deployments** manage a set of identical pods:
-
-- Ensure desired number of replicas
-- Handle rolling updates
-- Provide rollback capabilities
-- Best for stateless applications
-
-```bash
-# View deployments
-kubectl get deployments
-
-# Scale a deployment
-kubectl scale deployment <deployment-name> --replicas=3
-
-# Check rollout status
-kubectl rollout status deployment/<deployment-name>
-
-# View deployment history
-kubectl rollout history deployment/<deployment-name>
-```
-
-**When to use**: Stateless bioinformatics tools, web services, API servers
-
 ### StatefulSets: For Stateful Applications
 
 **StatefulSets** manage stateful applications:
@@ -259,32 +167,12 @@ kubectl get statefulsets
 
 # Describe a statefulset
 kubectl describe statefulset <statefulset-name>
+
+# Get a blueprint by saving the description of a statefulset to statefulset_name.yaml
+kubectl describe statefulset <statefulset-name> -o yaml > statefulset_name.yaml
 ```
 
 **When to use**: Databases, Jupyter notebooks with persistent storage, applications requiring stable network identity
-
-### Ingress: External Access
-
-**Ingress** manages external access to services:
-
-- HTTP/HTTPS routing
-- SSL termination
-- Virtual hosting
-- Load balancing
-
-```bash
-# View ingress resources
-kubectl get ingress
-
-# Describe ingress rules
-kubectl describe ingress <ingress-name>
-```
-
-**Exercise**:
-
-1. Create the test pod above and explore it
-2. Check if there are any deployments or statefulsets in your namespace
-3. Look at the ingress configuration for external access
 
 ---
 
@@ -390,163 +278,26 @@ spec:
 
 ## Use Cases
 
-## Use Case 1: CPU-based Data Science Notebook (Jupyter)
+For prototyping we are often using jupyter notebooks, in our case we have a jupyterhub instance with some default images for CPU + GPU servers. In case you need a specific image or a different hardware profile, approach the admins.
+
+## Use Case 1: GPU-based Deep Learning
 
 ### Motivation
 
-Jupyter notebooks are essential for exploratory data analysis, visualization, and prototyping in bioinformatics. This setup provides:
-
-- Persistent workspace that survives pod restarts
-- Access to shared datasets and reference genomes
-- Web-based access through ingress
-- Customizable Python/R environment
+In case you want to deploy a custom image and run it from within VSCode, you can take this template. This is often used for training and inference deep learning models with GPUs or software development, where you want to take advantage of the VSCode debugger and AI copilots / coding assistents.
 
 ### Architecture
 
 ```
-Internet → Ingress → Service → StatefulSet → PVC
-                                     ↓
-                              Persistent Storage
+Jupyter Notebook → StatefulSet → GPU Node
 ```
 
-### Deployment Template
-
-```yaml
-# jupyter-notebook.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: ${USERNAME}-jupyter
-  namespace: ${NAMESPACE}
-  labels:
-    app: jupyter-notebook
-    user: ${USERNAME}
-spec:
-  serviceName: ${USERNAME}-jupyter-service
-  replicas: 1
-  selector:
-    matchLabels:
-      app: jupyter-notebook
-      user: ${USERNAME}
-  template:
-    metadata:
-      labels:
-        app: jupyter-notebook
-        user: ${USERNAME}
-    spec:
-      nodeSelector:
-        node-type: cpu-optimized
-      containers:
-        - name: jupyter
-          image: jupyter/datascience-notebook:latest
-          ports:
-            - containerPort: 8888
-          env:
-            - name: JUPYTER_ENABLE_LAB
-              value: "yes"
-            - name: JUPYTER_TOKEN
-              value: ${JUPYTER_TOKEN}
-          resources:
-            requests:
-              memory: "4Gi"
-              cpu: "2"
-            limits:
-              memory: "8Gi"
-              cpu: "4"
-          volumeMounts:
-            - name: jupyter-workspace
-              mountPath: /home/jovyan/work
-            - name: shared-data
-              mountPath: /data/shared
-              readOnly: true
-            - name: reference-genomes
-              mountPath: /data/reference
-              readOnly: true
-      volumes:
-        - name: shared-data
-          nfs:
-            server: ${NFS_SERVER}
-            path: /shared/datasets
-        - name: reference-genomes
-          nfs:
-            server: ${NFS_SERVER}
-            path: /shared/reference-genomes
-  volumeClaimTemplates:
-    - metadata:
-        name: jupyter-workspace
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: ${STORAGE_CLASS}
-        resources:
-          requests:
-            storage: 50Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ${USERNAME}-jupyter-service
-  namespace: ${NAMESPACE}
-spec:
-  selector:
-    app: jupyter-notebook
-    user: ${USERNAME}
-  ports:
-    - port: 8888
-      targetPort: 8888
-  type: ClusterIP
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ${USERNAME}-jupyter-ingress
-  namespace: ${NAMESPACE}
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-spec:
-  tls:
-    - hosts:
-        - ${USERNAME}-jupyter.${CLUSTER_DOMAIN}
-      secretName: ${TLS_SECRET_NAME}
-  rules:
-    - host: ${USERNAME}-jupyter.${CLUSTER_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ${USERNAME}-jupyter-service
-                port:
-                  number: 8888
-```
-
-### Deployment Commands
-
+### Deployment
 ```bash
-# Set environment variables
-export USERNAME="your-username"
-export NAMESPACE="your-namespace"
-export JUPYTER_TOKEN=$(openssl rand -hex 32)
-export CLUSTER_DOMAIN="your-cluster-domain.com"
-export STORAGE_CLASS="your-storage-class"
-export NFS_SERVER="your-nfs-server-ip"
-export TLS_SECRET_NAME="your-tls-secret"
-
-# Deploy Jupyter notebook
-envsubst < jupyter-notebook.yaml | kubectl apply -f -
-
-# Check deployment status
-kubectl get statefulset ${USERNAME}-jupyter -n ${NAMESPACE}
-kubectl get pod -l app=jupyter-notebook -n ${NAMESPACE}
-
-# Get access URL
-echo "Jupyter notebook available at: https://${USERNAME}-jupyter.${CLUSTER_DOMAIN}"
-echo "Token: ${JUPYTER_TOKEN}"
-
-# Clean up when done
-envsubst < jupyter-notebook.yaml | kubectl delete -f -
+cd 01_gpu
+./run.sh
 ```
+
 
 ---
 
@@ -767,340 +518,163 @@ kubectl get pods -l pipeline=${PIPELINE_NAME} -n ${NAMESPACE}
 
 ---
 
-## Use Case 3: GPU-based Deep Learning (Transformer Training)
+## Use Case 4: CPU-based Data Science Notebook (Jupyterhub)
 
 ### Motivation
 
-Training transformer models on spatial omics data requires:
+Jupyter notebooks are essential for exploratory data analysis, visualization, and prototyping in bioinformatics. This setup provides:
 
-- Access to GPU resources
-- Persistent model checkpoints and datasets
-- Monitoring and logging capabilities
-- Jupyter notebook interface for experimentation
+- Persistent workspace that survives pod restarts
+- Access to shared datasets and reference genomes
+- Web-based access through ingress
+- Customizable Python/R environment
 
 ### Architecture
 
 ```
-Jupyter Lab → StatefulSet → GPU Node
-     ↓              ↓
-TensorBoard    Persistent Storage
+Internet → Ingress → Service → StatefulSet → PVC
+                                     ↓
+                              Persistent Storage
 ```
 
 ### Deployment Template
 
 ```yaml
-# gpu-ml-workspace.yaml
+# jupyter-notebook.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ${USERNAME}-ml-workspace
+  name: ${USERNAME}-jupyter
   namespace: ${NAMESPACE}
   labels:
-    app: ml-workspace
+    app: jupyter-notebook
     user: ${USERNAME}
 spec:
-  serviceName: ${USERNAME}-ml-workspace-service
+  serviceName: ${USERNAME}-jupyter-service
   replicas: 1
   selector:
     matchLabels:
-      app: ml-workspace
+      app: jupyter-notebook
       user: ${USERNAME}
   template:
     metadata:
       labels:
-        app: ml-workspace
+        app: jupyter-notebook
         user: ${USERNAME}
     spec:
       nodeSelector:
-        node-type: gpu-enabled
+        node-type: cpu-optimized
       containers:
-        - name: ml-workspace
-          image: tensorflow/tensorflow:latest-gpu-jupyter
+        - name: jupyter
+          image: jupyter/datascience-notebook:latest
           ports:
             - containerPort: 8888
-              name: jupyter
-            - containerPort: 6006
-              name: tensorboard
           env:
             - name: JUPYTER_ENABLE_LAB
               value: "yes"
             - name: JUPYTER_TOKEN
               value: ${JUPYTER_TOKEN}
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
           resources:
             requests:
-              memory: "16Gi"
-              cpu: "4"
-              nvidia.com/gpu: 1
+              memory: "4Gi"
+              cpu: "2"
             limits:
-              memory: "32Gi"
-              cpu: "8"
-              nvidia.com/gpu: 1
+              memory: "8Gi"
+              cpu: "4"
           volumeMounts:
-            - name: workspace
-              mountPath: /tf/workspace
-            - name: datasets
-              mountPath: /tf/datasets
+            - name: jupyter-workspace
+              mountPath: /home/jovyan/work
+            - name: shared-data
+              mountPath: /data/shared
               readOnly: true
-            - name: models-cache
-              mountPath: /root/.cache
-            - name: model-outputs
-              mountPath: /tf/models
-          command: ["/bin/bash"]
-          args:
-            - -c
-            - |
-              # Install additional packages
-              pip install transformers datasets tensorboard wandb scanpy
-
-              # Start TensorBoard in background
-              tensorboard --logdir=/tf/models/logs --host=0.0.0.0 --port=6006 &
-
-              # Start Jupyter
-              jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root \
-                --notebook-dir=/tf/workspace \
-                --NotebookApp.token=${JUPYTER_TOKEN}
+            - name: reference-genomes
+              mountPath: /data/reference
+              readOnly: true
       volumes:
-        - name: datasets
+        - name: shared-data
           nfs:
             server: ${NFS_SERVER}
-            path: /shared/datasets/spatial-omics
-        - name: models-cache
-          emptyDir:
-            sizeLimit: 10Gi
+            path: /shared/datasets
+        - name: reference-genomes
+          nfs:
+            server: ${NFS_SERVER}
+            path: /shared/reference-genomes
   volumeClaimTemplates:
     - metadata:
-        name: workspace
+        name: jupyter-workspace
       spec:
         accessModes: ["ReadWriteOnce"]
         storageClassName: ${STORAGE_CLASS}
         resources:
           requests:
-            storage: 100Gi
-    - metadata:
-        name: model-outputs
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: ${STORAGE_CLASS}
-        resources:
-          requests:
-            storage: 200Gi
+            storage: 50Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${USERNAME}-ml-workspace-service
+  name: ${USERNAME}-jupyter-service
   namespace: ${NAMESPACE}
 spec:
   selector:
-    app: ml-workspace
+    app: jupyter-notebook
     user: ${USERNAME}
   ports:
-    - name: jupyter
-      port: 8888
+    - port: 8888
       targetPort: 8888
-    - name: tensorboard
-      port: 6006
-      targetPort: 6006
   type: ClusterIP
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ${USERNAME}-ml-workspace-ingress
+  name: ${USERNAME}-jupyter-ingress
   namespace: ${NAMESPACE}
   annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
 spec:
   tls:
     - hosts:
-        - ${USERNAME}-ml.${CLUSTER_DOMAIN}
-        - ${USERNAME}-tensorboard.${CLUSTER_DOMAIN}
+        - ${USERNAME}-jupyter.${CLUSTER_DOMAIN}
       secretName: ${TLS_SECRET_NAME}
   rules:
-    - host: ${USERNAME}-ml.${CLUSTER_DOMAIN}
+    - host: ${USERNAME}-jupyter.${CLUSTER_DOMAIN}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: ${USERNAME}-ml-workspace-service
+                name: ${USERNAME}-jupyter-service
                 port:
                   number: 8888
-    - host: ${USERNAME}-tensorboard.${CLUSTER_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ${USERNAME}-ml-workspace-service
-                port:
-                  number: 6006
-```
-
-### Training Script Template
-
-```python
-# spatial_transformer_training.py
-import tensorflow as tf
-from transformers import TFAutoModel, AutoTokenizer
-import scanpy as sc
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import os
-
-class SpatialTransformerTrainer:
-    def __init__(self, model_name="microsoft/DialoGPT-medium", output_dir="/tf/models"):
-        self.model_name = model_name
-        self.output_dir = output_dir
-        self.setup_logging()
-
-    def setup_logging(self):
-        """Setup TensorBoard logging"""
-        log_dir = os.path.join(self.output_dir, "logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
-        self.tensorboard_callback = tf.keras.callbacks.TensorBoard(
-            log_dir=log_dir,
-            histogram_freq=1,
-            update_freq='epoch'
-        )
-
-    def load_spatial_data(self, data_path="/tf/datasets"):
-        """Load and preprocess spatial omics data"""
-        # Your spatial omics data loading logic here
-        print(f"Loading spatial omics data from {data_path}")
-        # This is a placeholder - replace with your actual data loading
-        return None
-
-    def prepare_model(self):
-        """Initialize and compile the transformer model"""
-        strategy = tf.distribute.MirroredStrategy()
-
-        with strategy.scope():
-            model = TFAutoModel.from_pretrained(self.model_name)
-            # Add your custom layers for spatial omics analysis
-            # model = self.add_spatial_layers(model)
-
-            model.compile(
-                optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
-                loss='mse',  # Adjust based on your task
-                metrics=['mae']
-            )
-
-        return model
-
-    def train(self, epochs=100, batch_size=32):
-        """Train the model"""
-        # Load data
-        data = self.load_spatial_data()
-
-        # Prepare model
-        model = self.prepare_model()
-
-        # Setup callbacks
-        callbacks = [
-            self.tensorboard_callback,
-            tf.keras.callbacks.ModelCheckpoint(
-                filepath=os.path.join(self.output_dir, "checkpoints", "model_{epoch:02d}.h5"),
-                save_best_only=True,
-                monitor='val_loss'
-            ),
-            tf.keras.callbacks.EarlyStopping(
-                patience=10,
-                restore_best_weights=True
-            )
-        ]
-
-        # Train model
-        print("Starting training...")
-        # history = model.fit(
-        #     train_dataset,
-        #     validation_data=val_dataset,
-        #     epochs=epochs,
-        #     callbacks=callbacks
-        # )
-
-        # Save final model
-        model.save(os.path.join(self.output_dir, "final_model"))
-        print(f"Model saved to {self.output_dir}/final_model")
-
-if __name__ == "__main__":
-    trainer = SpatialTransformerTrainer()
-    trainer.train()
 ```
 
 ### Deployment Commands
 
 ```bash
-# Set environment variables for GPU workspace
+# Set environment variables
 export USERNAME="your-username"
 export NAMESPACE="your-namespace"
 export JUPYTER_TOKEN=$(openssl rand -hex 32)
 export CLUSTER_DOMAIN="your-cluster-domain.com"
-export STORAGE_CLASS="fast-ssd"  # Use fast storage for ML workloads
+export STORAGE_CLASS="your-storage-class"
 export NFS_SERVER="your-nfs-server-ip"
 export TLS_SECRET_NAME="your-tls-secret"
 
-# Deploy ML workspace
-envsubst < gpu-ml-workspace.yaml | kubectl apply -f -
+# Deploy Jupyter notebook
+envsubst < jupyter-notebook.yaml | kubectl apply -f -
 
-# Check GPU allocation
-kubectl describe pod -l app=ml-workspace -n ${NAMESPACE}
+# Check deployment status
+kubectl get statefulset ${USERNAME}-jupyter -n ${NAMESPACE}
+kubectl get pod -l app=jupyter-notebook -n ${NAMESPACE}
 
-# Monitor resource usage
-kubectl top pod -l app=ml-workspace -n ${NAMESPACE}
-
-# Access URLs
-echo "Jupyter Lab: https://${USERNAME}-ml.${CLUSTER_DOMAIN}"
-echo "TensorBoard: https://${USERNAME}-tensorboard.${CLUSTER_DOMAIN}"
+# Get access URL
+echo "Jupyter notebook available at: https://${USERNAME}-jupyter.${CLUSTER_DOMAIN}"
 echo "Token: ${JUPYTER_TOKEN}"
 
 # Clean up when done
-envsubst < gpu-ml-workspace.yaml | kubectl delete -f -
+envsubst < jupyter-notebook.yaml | kubectl delete -f -
 ```
-
----
-
-## Environment Variables Template
-
-### .env.example
-
-```bash
-# Cluster Configuration
-CLUSTER_DOMAIN="your-cluster-domain.com"
-NFS_SERVER="your-nfs-server-ip"
-STORAGE_CLASS="your-default-storage-class"
-TLS_SECRET_NAME="your-tls-secret"
-
-# User Configuration
-USERNAME="your-username"
-NAMESPACE="your-namespace"
-PROJECT_NAME="your-project"
-
-# Security
-JUPYTER_TOKEN=""  # Will be generated automatically
-
-# Data Paths
-INPUT_NFS_PATH="/shared/projects/your-project/input"
-OUTPUT_NFS_PATH="/shared/projects/your-project/output"
-
-# Pipeline Specific
-PIPELINE_NAME="your-pipeline"
-PIPELINE_REPO="your-pipeline-repo"
-PIPELINE_REVISION="main"
-PIPELINE_PARAMS=""
-
-# Timestamps (generated automatically)
-TIMESTAMP=""
-```
-
 ---
 
 ## Best Practices and Tips
@@ -1185,63 +759,6 @@ kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp'
 
 ---
 
-## Quick Reference Commands
-
-### Deployment Commands
-
-```bash
-# Source environment variables
-source .env
-
-# Deploy Jupyter Notebook
-envsubst < templates/jupyter-notebook.yaml | kubectl apply -f -
-
-# Deploy Nextflow Pipeline
-export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-envsubst < templates/nextflow-pipeline.yaml | kubectl apply -f -
-
-# Deploy ML Workspace
-envsubst < templates/gpu-ml-workspace.yaml | kubectl apply -f -
-
-# Monitor deployments
-kubectl get all -n ${NAMESPACE}
-kubectl get pvc -n ${NAMESPACE}
-kubectl get ingress -n ${NAMESPACE}
-```
-
-### Cleanup Commands
-
-```bash
-# Clean up specific deployments
-kubectl delete statefulset ${USERNAME}-jupyter -n ${NAMESPACE}
-kubectl delete job ${PIPELINE_NAME}-${TIMESTAMP} -n ${NAMESPACE}
-kubectl delete statefulset ${USERNAME}-ml-workspace -n ${NAMESPACE}
-
-# Clean up all resources for a user
-kubectl delete all -l user=${USERNAME} -n ${NAMESPACE}
-
-# Clean up PVCs (be careful!)
-kubectl delete pvc -l user=${USERNAME} -n ${NAMESPACE}
-```
-
-### Monitoring Commands
-
-```bash
-# Real-time pod monitoring
-watch kubectl get pods -n ${NAMESPACE}
-
-# Resource usage monitoring
-watch kubectl top pods -n ${NAMESPACE}
-
-# Log following
-kubectl logs -f <pod-name> -n ${NAMESPACE}
-
-# Port forwarding for local access
-kubectl port-forward pod/<pod-name> 8888:8888 -n ${NAMESPACE}
-```
-
----
-
 ## Troubleshooting Guide
 
 ### Common Scenarios
@@ -1314,68 +831,6 @@ kubectl describe pod <pending-pod-name> -n ${NAMESPACE}
 
 ---
 
-## Advanced Topics
-
-### Custom Resource Definitions (CRDs)
-
-Some bioinformatics tools provide their own Kubernetes operators:
-
-```bash
-# Example: Argo Workflows for complex pipelines
-kubectl get workflows -n ${NAMESPACE}
-kubectl describe workflow <workflow-name> -n ${NAMESPACE}
-```
-
-### Horizontal Pod Autoscaling
-
-For variable workloads, you can enable automatic scaling:
-
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: nextflow-hpa
-  namespace: ${NAMESPACE}
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: nextflow-workers
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-```
-
-### Job Queues with Volcano
-
-For better batch job scheduling:
-
-```yaml
-apiVersion: batch.volcano.sh/v1alpha1
-kind: Job
-metadata:
-  name: bioinf-batch-job
-spec:
-  schedulerName: volcano
-  queue: bioinformatics-queue
-  tasks:
-    - replicas: 4
-      name: worker
-      template:
-        spec:
-          containers:
-            - name: worker
-              image: bioinformatics/pipeline:latest
-```
-
----
-
 ## Useful Links and Resources
 
 ### Documentation
@@ -1387,83 +842,4 @@ spec:
 ### Bioinformatics-Specific Resources
 
 - [nf-core Pipelines](https://nf-co.re/)
-- [Galaxy on Kubernetes](https://galaxyproject.org/cloud/k8s/)
 - [Bioconda Containers](https://biocontainers.pro/)
-
-### Monitoring and Observability
-
-- [Prometheus for Kubernetes](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config)
-- [Grafana Dashboards](https://grafana.com/grafana/dashboards/)
-
----
-
-## Workshop Exercises
-
-### Exercise 1: Deploy Your First Jupyter Notebook
-
-1. Set up your `.env` file with your personal configuration
-2. Deploy a Jupyter notebook using the provided template
-3. Access the notebook through the web interface
-4. Create a simple Python script to test data access
-5. Save your work and verify persistence after pod restart
-
-### Exercise 2: Run a Simple Nextflow Pipeline
-
-1. Fork or clone a simple nf-core pipeline
-2. Modify the pipeline parameters for your dataset
-3. Deploy the pipeline using the Kubernetes executor
-4. Monitor the pipeline execution and worker pods
-5. Examine the results and logs
-
-### Exercise 3: Set Up ML Training Environment
-
-1. Deploy the GPU-enabled ML workspace
-2. Install additional Python packages for your specific use case
-3. Load a sample spatial omics dataset
-4. Set up a simple training loop with TensorBoard logging
-5. Monitor GPU utilization and training progress
-
-### Exercise 4: Data Management
-
-1. Create different types of persistent volumes for your workflows
-2. Practice mounting shared datasets and reference genomes
-3. Set up proper backup and cleanup procedures
-4. Test data persistence across pod restarts
-
-### Exercise 5: Troubleshooting
-
-1. Intentionally create common misconfigurations
-2. Practice using kubectl commands to diagnose issues
-3. Fix the problems using the troubleshooting guide
-4. Document your solutions for future reference
-
----
-
-## Conclusion
-
-This workshop has provided you with:
-
-- **Fundamental understanding** of Kubernetes concepts
-- **Practical templates** for common bioinformatics workloads
-- **Best practices** for resource management and security
-- **Troubleshooting skills** for common issues
-- **Scalable solutions** that can grow with your research needs
-
-### Next Steps
-
-1. **Start small**: Begin with simple Jupyter notebooks and gradually move to more complex workflows
-2. **Monitor resources**: Always keep an eye on cluster resource usage
-3. **Collaborate**: Share templates and best practices with your team
-4. **Stay updated**: Kubernetes and bioinformatics tools evolve rapidly
-5. **Contribute back**: Share your improvements and custom templates with the community
-
-### Getting Help
-
-- **Cluster administrators**: For resource allocation and access issues
-- **Bioinformatics team**: For pipeline-specific questions
-- **Kubernetes community**: For general Kubernetes questions
-- **Documentation**: Always refer to official documentation first
-
-Remember: Kubernetes is a powerful tool, but with great power comes great responsibility. Always be mindful of resource usage and clean up after your jobs to ensure fair access for all users.
-
-Happy computing! 🧬🚀
