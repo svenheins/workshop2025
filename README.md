@@ -32,6 +32,7 @@ Welcome to this hands-on Kubernetes workshop designed specifically for computati
 - Access to the provided Kubernetes cluster
 - `kubectl` installed and configured (test with ```kubectl get pods```)
 - install envsubst (needed for replacing text in yaml files)
+- (Optional) VSCode extensions: Kubernetes, Docker, nextflow
 
 ### Howto use this repository
 

@@ -62,7 +62,7 @@ spec:
       - envFrom:
         - configMapRef:
             name: proxy-config
-        image: ${REGISTRY}/${CONTAINER_IMAGE}
+        image: ${REGISTRY}/${KUBERNETES_CONTAINER_IMAGE}
         imagePullPolicy: Always
         name: workshop2025-gpu
         resources:
