@@ -15,13 +15,15 @@ Welcome to this hands-on Kubernetes workshop designed specifically for computati
 - Basic command line knowledge
 - Docker concepts (containers, images)
 - Access to the provided Kubernetes cluster
-- `kubectl` installed and configured
+- `kubectl` installed and configured (test with ```kubectl get pods```)
+- install envsubst (needed for replacing text in yaml files)
 
-## Setup
+## Howto use this repository
 
 1. Clone this repository
 2. Copy `.env.example` to `.env` and fill in your specific values
-3. Source your environment variables: `source .env`
+3. enter a numbered folder (i.e. 01_gpu)
+4. execute the respective run.sh script
 
 ---
 

@@ -1,0 +1,1 @@
+nextflow run main.nf -with-k8s

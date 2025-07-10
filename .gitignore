@@ -1,6 +1,16 @@
 ## custom gitignores
 ppt/
 
+## nextflow artifacts
+*.log.*
+.nextflow/
+results/
+work
+
+## vscode
+.vscode/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

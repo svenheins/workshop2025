@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: workshop2025-gpu
+  name: statefulset-workshop2025-gpu
+  namespace: ${K8S_NAMESPACE}
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: workshop2025-gpu
+  serviceName: ""
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: workshop2025-gpu
+    spec:
+      containers:
+      
+      # should start jupyter 
+      #- command:
+      #  - sleep
+      #  - infinity
+      - envFrom:
+        - configMapRef:
+            name: proxy-config
+        image: ${REGISTRY}/${CONTAINER_IMAGE}
+        imagePullPolicy: Always
+        name: workshop2025-gpu
+        resources:
+          limits:
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+        ports:
+        - containerPort: 8888
+          name: jupyter
+          protocol: TCP
+        #securityContext:
+        #  runAsNonRoot: true
+        #  runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: ${MOUNT_SERVER_01}
+          name: nfs-server-01
+        - mountPath: ${MOUNT_SERVER_02}
+          name: nfs-server-02
+        - mountPath: /etc/apt/apt.conf
+          name: apt-config
+          subPath: apt.conf
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: nfs-server-01
+        nfs:
+          path: /data/
+          server: ${NFS_SERVER_01}
+      - name: nfs-server-02
+        nfs:
+          path: /data/
+          server: ${NFS_SERVER_02}
+      - configMap:
+          defaultMode: 420
+          name: apt-config
+        name: apt-config
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
