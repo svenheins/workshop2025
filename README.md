@@ -1,16 +1,31 @@
 ![Kubernetes for Computational Biology](./images/Kubernetes_workshop_2025.png)
 
-# Kubernetes for Computational Biology
+## Table of Contents
+- [Introduction](#introduction)
+- [Kubernetes Overview](#kubernetes-overview)
+- [Our Kubernetes Cluster](#our-kubernetes-cluster)
+- [Namespaces](#namespaces)
+- [Core Kubernetes Objects](#core-kubernetes-objects)
+- [Data Access and Persistence](#data-access-and-persistence)
+- [Use Cases](#use-cases)
+  - [Use Case 1: GPU-based Deep Learning](#use-case-1-gpu-based-deep-learning)
+  - [Use Case 2: Local Nextflow Job (Docker)](#use-case-2-local-nextflow-job-docker)
+  - [Use Case 3: Nextflow Pipeline (Kubernetes)](#use-case-3-nextflow-pipeline-kubernetes)
+- [Best Practices and Tips](#best-practices-and-tips)
+- [Troubleshooting Guide](#troubleshooting-guide)
+- [Useful Links and Resources](#useful-links-and-resources)
+
+## Introduction
 
 Welcome to this hands-on Kubernetes workshop designed specifically for computational biomedical workflows. This workshop will guide you through the fundamentals of Kubernetes and provide practical templates for common bioinformatics use cases.
 
-## Structure
+### Structure
 
 1. Introduction to Kubernetes: 15 minutes presentation about the core principles of Kubernetes and our concrete cluster
 2. Demonstration: 15 minutes of demonstration how to work with Kubernetes (only requirement: working kubectl + config) - showcase the 3 usecases - in a nutshell - what to expect from those examples
 3. Practical Session: 30 minutes of reproducing 1 blueprint for each participant
 
-## Prerequisites for the practical session
+### Prerequisites for the practical session
 
 - Basic command line knowledge
 - Docker concepts (containers, images)
@@ -18,7 +33,7 @@ Welcome to this hands-on Kubernetes workshop designed specifically for computati
 - `kubectl` installed and configured (test with ```kubectl get pods```)
 - install envsubst (needed for replacing text in yaml files)
 
-## Howto use this repository
+### Howto use this repository
 
 1. Clone this repository
 2. Copy `.env.example` to `.env` and fill in your specific values
@@ -27,7 +42,7 @@ Welcome to this hands-on Kubernetes workshop designed specifically for computati
 
 ---
 
-## 1. Kubernetes Overview
+## Kubernetes Overview
 
 ### What is Kubernetes?
 
@@ -51,7 +66,7 @@ Kubernetes (K8s) is a container orchestration platform that automates the deploy
 
 ![Kubernetes Cluster Architecture](./images/kubernetes-cluster-architecture.svg)
 
-## 2. Our Kubernetes Cluster
+## Our Kubernetes Cluster
 
 ### Basic kubectl Commands
 
@@ -73,7 +88,7 @@ kubectl get pods
 
 ---
 
-## 3. Namespaces: Isolation vs Sharing
+## Namespaces
 
 ### What are Namespaces?
 
@@ -105,7 +120,7 @@ kubectl config set-context --current --namespace=${NAMESPACE}
 
 ---
 
-## 4. Core Kubernetes Objects
+## Core Kubernetes Objects
 
 ### Pods: The Basic Unit
 
@@ -176,7 +191,7 @@ kubectl describe statefulset <statefulset-name> -o yaml > statefulset_name.yaml
 
 ---
 
-## 5. Data Access and Persistence
+## Data Access and Persistence
 
 ### Storage Types in Kubernetes
 
