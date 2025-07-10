@@ -297,11 +297,34 @@ Jupyter Notebook → StatefulSet → GPU Node
 cd 01_gpu
 ./run.sh
 ```
+---
 
+## Use Case 2: Local Nextflow Job (Docker)
+
+### Motivation
+
+Here you can run a simple nextflow job with docker before deploying it to Kubernetes.
+
+### Additional prerequisites on your local computer
+
+- nextflow (via java / conda)
+- docker
+
+### Architecture
+
+```
+Nextflow script → Docker → local computer
+```
+
+### Deployment
+```bash
+cd 02_nextflow_docker
+./run.sh
+```
 
 ---
 
-## Use Case 2: CPU-based Nextflow Pipeline
+## Use Case 3: Nextflow Pipeline (Kubernetes)
 
 ### Motivation
 
