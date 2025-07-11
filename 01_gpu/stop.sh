@@ -4,4 +4,4 @@ source ../.env
 set +a
 
 ## set the environment variables in the statefulset.yaml file and apply it to the cluster
-envsubst < statefulset_no_gpu.yaml | kubectl apply -f -
+envsubst < statefulset_no_gpu.yaml | kubectl delete -f -
